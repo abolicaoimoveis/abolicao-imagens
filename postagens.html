@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Postagens — CRM Moralí</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icones/favicon-32.png">
+  <link rel="apple-touch-icon" href="icones/icone-180.png">
+  <link rel="manifest" href="icones/manifest.json">
+  <meta name="theme-color" content="#023047">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilo.css?v=4aa8c171">
+</head>
+<body>
+  <header class="topo" data-tela="postagens"></header>
+
+  <main>
+    <div class="cabecalho-pagina">
+      <h1>Postagens</h1>
+      <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <!-- v1.591 — a pasta inteira de uma vez; a avulsa continua sendo o principal -->
+        <button class="btn btn-claro" data-perm="postagens:criar"
+          onclick="ltAbrir()">Subir em lote</button>
+        <button class="btn" data-perm="postagens:criar"
+          onclick="pgNova()">+ Nova postagem</button>
+      </span>
+    </div>
+
+    <!-- os números do mês -->
+    <div class="pg-kpis" id="pg-kpis"></div>
+
+    <!-- calendário + a coluna do dia -->
+    <div class="pg-duas">
+      <div class="cartao">
+        <h2>Calendário
+          <span class="cnt">Instagram e Facebook</span>
+          <span class="dir">
+            <span class="pg-nav">
+              <button class="btn btn-claro" onclick="pgMes(-1)">‹</button>
+              <b id="pg-mes-nome"></b>
+              <button class="btn btn-claro" onclick="pgMes(1)">›</button>
+            </span>
+          </span></h2>
+        <div class="pg-cal" id="pg-cal"></div>
+        <div class="pg-legenda">
+          <span class="pg-ponto aprovar"><i></i> falta aprovar</span>
+          <span class="pg-ponto agendada"><i></i> agendada</span>
+          <span class="pg-ponto publicada"><i></i> publicada</span>
+          <span class="pg-ponto falhou"><i></i> falhou</span>
+          <span class="pg-ponto sem-midia"><i></i> espaço da régua, sem mídia</span>
+          <span style="margin-left:auto">clique no dia · a moldura da foto é o estado</span>
+        </div>
+      </div>
+
+      <div class="pg-lado">
+        <!-- v1.594 — A FILA DE COMENTÁRIOS.
+             Fica ACIMA do dia e da fila de aprovação de propósito:
+             comentário é gente esperando resposta; aprovação é trabalho
+             interno, que espera sem custo. Mockup aprovado em
+             Mockup-Comentarios-Fila/. O corpo é desenhado pelo
+             pgDesenharComentarios(). -->
+        <div class="cartao" id="pg-coment-cartao" data-perm="postagens:ver">
+          <h2>Comentários a responder <span class="cnt" id="pg-coment-conta"></span></h2>
+          <div id="pg-coment"></div>
+        </div>
+        <div class="cartao">
+          <h2 id="pg-dia-titulo">Escolha um dia</h2>
+          <div class="corpo" id="pg-dia-corpo">
+            <div style="color:var(--texto-suave);font-size:12.5px">Clique num dia do
+              calendário para ver as postagens dele.</div>
+          </div>
+        </div>
+        <div class="cartao">
+          <h2>Fila de aprovação <span class="dir" id="pg-fila-conta"></span></h2>
+          <div class="corpo" id="pg-fila"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- a régua de conteúdo -->
+    <div class="cartao" style="margin-top:16px">
+      <h2>A régua de conteúdo
+        <span class="cnt">cria os espaços vazios do calendário, 4 semanas à frente</span>
+        <span class="dir">
+          <button class="btn btn-claro" data-perm="postagens:editar"
+            onclick="pgReguaNova()">+ Compromisso</button>
+          <button class="btn btn-claro" data-perm="postagens:editar"
+            onclick="pgCriarEspacos()">Abrir os espaços agora</button>
+        </span></h2>
+      <div class="pg-regua" id="pg-regua"></div>
+    </div>
+  </main>
+
+  <footer></footer>
+
+  <!-- a janela de nova postagem / edição -->
+  <div class="modal-fundo" id="pg-modal">
+    <div class="modal" style="max-width:860px">
+      <h2 id="pg-modal-titulo">Nova postagem</h2>
+      <div class="pg-form">
+        <div>
+          <div class="pg-fone"><div class="pg-tela" id="pg-previa">
+            <div class="pg-previa-vazia">a prévia aparece quando a mídia subir</div>
+          </div></div>
+        </div>
+        <div class="pg-campos">
+          <div class="orc-campo"><label>Tema</label>
+            <div class="orc-radios" id="pg-f-tema"></div></div>
+
+          <div class="pg-origem" id="pg-origem" style="display:none">
+            <label>Montar a partir do imóvel</label>
+            <div class="linha">
+              <select id="pg-f-imovel"></select>
+              <button class="btn" style="white-space:nowrap" onclick="pgMontarDoImovel()">Montar</button>
+            </div>
+            <div class="obs">O Montar escreve um modelo simples — tipo, bairro, valor e código, nunca o
+              endereço. Para o texto completo, use o <b>Escrever com IA</b> na legenda: ele lê as
+              lâminas e a ficha.</div>
+          </div>
+
+          <div class="orc-campo"><label>Tipo</label>
+            <div class="orc-radios" id="pg-f-tipo"></div></div>
+
+          <div class="orc-campo"><label>As lâminas <span id="pg-conta-laminas"></span></label>
+            <div class="pg-slides solta" id="pg-slides"></div>
+            <input type="file" id="pg-arquivos" accept="image/jpeg,image/png" multiple
+              style="display:none" onchange="pgArquivosEscolhidos(this.files)">
+            <div class="pg-slides-obs">JPG de preferência (é o que o Instagram aceita melhor) ·
+              a 1ª é a capa · story é uma só · clique na lâmina para ampliar e ler ·
+              o × tira · arraste as lâminas para trocar a ordem</div></div>
+
+          <div class="orc-campo"><label>Onde publicar</label>
+            <div class="orc-radios">
+              <label id="pg-r-ig"><input type="checkbox" id="pg-f-ig" checked
+                onchange="pgLigarRadios()"> Instagram</label>
+              <label id="pg-r-fb"><input type="checkbox" id="pg-f-fb" checked
+                onchange="pgLigarRadios()"> Facebook</label>
+            </div></div>
+
+          <div class="orc-campo" id="pg-cx-tambem" style="display:none">
+            <label class="orc-check"><input type="checkbox" id="pg-f-tambem-story">
+              Publicar também nos stories — a capa vira story, no mesmo horário</label></div>
+
+          <div class="pg-linha2">
+            <div class="orc-campo"><label>Dia</label><input type="date" id="pg-f-dia"></div>
+            <div class="orc-campo"><label>Hora</label><input type="time" id="pg-f-hora"></div>
+          </div>
+
+          <div class="orc-campo">
+            <!-- v1.486 — a IA escreve a legenda lendo as lâminas e a ficha.
+                 O botão mora no rótulo; a permissão de verdade é a do
+                 banco (a função roda como o usuário). -->
+            <div class="pg-ia-cab"><label>Legenda</label><span class="vao"></span>
+              <button type="button" class="pg-ia-btn" data-perm="postagens:editar"
+                onclick="pgLegendaIA(this)"
+                title="A IA lê as lâminas e a ficha do imóvel e escreve a legenda no padrão da Configuração">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect
+                  x="5" y="8.2" width="14" height="10" rx="2.4"/><path d="M12 8.2V5.6"/><circle cx="12"
+                  cy="4.2" r="1.2"/><circle cx="9.2" cy="12.6" r=".9" fill="currentColor" stroke="none"/><circle
+                  cx="14.8" cy="12.6" r=".9" fill="currentColor" stroke="none"/><path d="M9.4 15.4h5.2"/><path
+                  d="M2.8 11.6v3.2M21.2 11.6v3.2"/></svg>
+                Escrever com IA</button></div>
+            <textarea id="pg-f-legenda" oninput="pgContar()"></textarea>
+            <div class="pg-ia-rodape" id="pg-ia-rodape"></div>
+            <div class="pg-conta" id="pg-f-conta">0 / 2.200</div></div>
+        </div>
+      </div>
+      <div class="pg-rodape-form">
+        <button class="btn btn-claro" onclick="pgFechar()">Cancelar</button>
+        <button class="btn btn-claro" id="pg-b-excluir" data-perm="postagens:editar"
+          onclick="pgExcluir()">Excluir</button>
+        <span class="fim"></span>
+        <!-- v1.452 — os botões saem do pgBotoesDoRodape, por status.
+             Fixos aqui, o modal dizia "Agendar" onde o cartão do dia
+             dizia "Aprovar", e oferecia salvar numa já publicada. -->
+        <span id="pg-acoes"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- v1.591 — SUBIR EM LOTE: a pasta inteira, a regra do calendário e
+       como as postagens nascem. Três passos numa janela só; quem manda
+       é o js/postagens.js (bloco "SUBIR EM LOTE"). Ids lt-*. -->
+  <div class="modal-fundo" id="pg-modal-lote">
+    <div class="modal" style="max-width:1080px;padding:0">
+      <h2 style="padding:20px 16px 0">Subir postagens em lote</h2>
+      <div style="padding:0 16px">
+        <div class="lt-passos">
+          <div id="lt-trilho-1"><i>1</i> Arquivos e regra</div>
+          <div id="lt-trilho-2"><i>2</i> Conferir a distribuição</div>
+          <div id="lt-trilho-3"><i>3</i> Subir</div>
+        </div>
+      </div>
+
+      <!-- passo 1 -->
+      <div id="lt-passo-1">
+        <div class="lt-duas" style="padding:0 16px 16px">
+          <div class="pg-campos">
+            <div class="orc-campo"><label>As artes</label>
+              <div class="pg-slides solta lt-solta" id="lt-solta">
+                <div class="g">Solte aqui a pasta inteira, ou os arquivos</div>
+                <div class="p">Centenas de uma vez. <b>Um arquivo = uma postagem de feed.</b>
+                  <b>Uma subpasta com várias fotos = um carrossel</b> (a 1ª pela ordem do nome é a capa).
+                  Arquivos <code>nome-01.jpg, nome-02.jpg…</code> também viram carrossel. Arte 9:16 vira story.
+                  JPG ou PNG. Se houver uma planilha <b>legendas.csv</b> junto, as legendas entram sozinhas.</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+                  <button type="button" class="btn btn-claro"
+                    onclick="document.getElementById('lt-pasta').click()">Escolher a pasta…</button>
+                  <button type="button" class="btn btn-claro"
+                    onclick="document.getElementById('lt-arquivos').click()">ou arquivos avulsos…</button>
+                </div>
+                <input type="file" id="lt-pasta" webkitdirectory multiple style="display:none"
+                  onchange="ltEscolhidos(this.files)">
+                <input type="file" id="lt-arquivos" accept="image/jpeg,image/png,.csv" multiple style="display:none"
+                  onchange="ltEscolhidos(this.files)">
+              </div>
+            </div>
+            <div class="lt-lidos" id="lt-lidos" style="display:none"></div>
+            <div class="lt-fita" id="lt-fita"></div>
+            <div class="pg-recusa" id="lt-recusa"></div>
+
+            <div class="lt-sub">Como elas nascem</div>
+            <div class="lt-nascem">
+              <label class="on"><input type="radio" name="lt-nascem" value="aprovar" checked onchange="ltLigarRadios()">
+                <b>Precisam de aprovação</b>
+                <small>Vão para a <b>fila de aprovação</b>. Nada sai sem alguém aprovar — uma a uma, ou
+                  "Aprovar todas" na fila.</small></label>
+              <label><input type="radio" name="lt-nascem" value="agendada" onchange="ltLigarRadios()">
+                <b>Já aprovadas</b>
+                <small>Nascem <b>agendadas</b>: o relógio publica sozinho no dia e hora. Para quando a leva
+                  já foi conferida fora do CRM.</small></label>
+            </div>
+          </div>
+
+          <div class="pg-campos">
+            <div class="pg-origem">
+              <label>A regra do calendário</label>
+              <div class="grade" style="gap:10px 12px">
+                <div class="orc-campo"><label>A partir de</label>
+                  <input type="date" id="lt-de" onchange="ltPintarPrevia()"></div>
+                <div class="orc-campo"><label>Ordem</label>
+                  <select id="lt-ordem">
+                    <option value="nome">Pela ordem do nome do arquivo</option>
+                    <option value="alternar">Alternar banner e carrossel</option>
+                    <option value="embaralhar">Embaralhar</option>
+                  </select></div>
+              </div>
+              <div class="orc-campo" style="margin-top:10px"><label>Horários (por dia)</label>
+                <div class="lt-chips" id="lt-horarios"></div></div>
+              <div class="orc-campo" style="margin-top:10px"><label>Dias da semana</label>
+                <div class="lt-dias" id="lt-dias"></div></div>
+              <label class="orc-check" style="margin-top:8px"><input type="checkbox" id="lt-pular" checked
+                onchange="ltPintarPrevia()"> Pular horário que já tem postagem (senão as duas saem juntas, no mesmo minuto)</label>
+              <label class="orc-check"><input type="checkbox" id="lt-vazios" checked
+                onchange="ltPintarPrevia()"> Encaixar nos espaços vazios que a régua já abriu</label>
+            </div>
+
+            <div class="lt-resultado" id="lt-resultado" style="display:none"></div>
+
+            <div class="orc-campo"><label>Tema</label>
+              <div class="orc-radios">
+                <label class="on"><input type="radio" name="lt-tema" value="dica" checked onchange="ltLigarRadios()"> Dica ou informação útil</label>
+                <label><input type="radio" name="lt-tema" value="institucional" onchange="ltLigarRadios()"> Institucional</label>
+                <label><input type="radio" name="lt-tema" value="imovel" onchange="ltLigarRadios()"> Imóvel da carteira</label>
+              </div></div>
+
+            <div class="orc-campo"><label>Onde publicar</label>
+              <div class="orc-radios">
+                <label class="on"><input type="checkbox" id="lt-ig" checked onchange="ltLigarRadios()"> Instagram</label>
+                <label class="on"><input type="checkbox" id="lt-fb" checked onchange="ltLigarRadios()"> Facebook</label>
+              </div></div>
+            <label class="orc-check"><input type="checkbox" id="lt-tambem">
+              Publicar também nos stories — a capa de cada feed vira um story, no mesmo horário</label>
+
+            <div class="orc-campo"><label>Legenda</label>
+              <div class="orc-radios lt-vertical">
+                <label class="on"><input type="radio" name="lt-legenda" value="csv" checked onchange="ltLigarRadios()">
+                  <span>Da planilha <b>legendas.csv</b> que veio junto com as artes</span></label>
+                <label><input type="radio" name="lt-legenda" value="ia" onchange="ltLigarRadios()">
+                  <span>A IA escreve, lendo cada arte — roda depois de subir, uma por uma</span></label>
+                <label><input type="radio" name="lt-legenda" value="vazia" onchange="ltLigarRadios()">
+                  <span>Vazia — escrevo depois, na fila</span></label>
+              </div>
+              <div class="pg-slides-obs" id="lt-legenda-obs" style="margin-top:4px"></div></div>
+          </div>
+        </div>
+        <div class="pg-rodape-form" id="lt-rodape-1">
+          <button class="btn btn-claro" onclick="ltFechar()">Cancelar</button>
+          <span class="fim"></span>
+          <button class="btn" id="lt-b-conferir" onclick="ltIrPasso2()">Ver a distribuição →</button>
+        </div>
+      </div>
+
+      <!-- passo 2 -->
+      <div id="lt-passo-2" style="display:none">
+        <div style="padding:0 16px 16px">
+          <div class="lt-resumo" id="lt-resumo"></div>
+          <div class="lt-tab-caixa">
+            <table class="lt-tab">
+              <thead><tr><th>#</th><th></th><th>Arquivo</th><th>Tipo</th><th>Quando</th><th>Legenda</th><th>Redes</th></tr></thead>
+              <tbody id="lt-tabela"></tbody>
+            </table>
+          </div>
+          <div style="font-size:12px;color:var(--texto-suave);margin-top:8px">Dia e hora se mudam na própria linha.
+            Nada foi gravado ainda. <a href="#" onclick="ltBaixarPlanilha();return false"
+            style="color:var(--link);font-weight:600;text-decoration:none">Baixar a distribuição em planilha</a></div>
+        </div>
+        <div class="pg-rodape-form" id="lt-rodape-2" style="display:none">
+          <button class="btn btn-claro" onclick="ltPasso(1)">← Voltar</button>
+          <span class="fim"></span>
+          <button class="btn" id="lt-b-subir" data-perm="postagens:criar" onclick="ltSubir()">Subir</button>
+        </div>
+      </div>
+
+      <!-- passo 3 -->
+      <div id="lt-passo-3" style="display:none">
+        <div style="padding:0 16px 16px">
+          <div class="lt-prog"><span class="lt-gira" id="lt-gira"></span><b id="lt-prog-n">0 de 0</b> subidas
+            <span class="vao"></span><small id="lt-prog-resta"></small></div>
+          <div class="lt-barra"><i id="lt-barra"></i></div>
+          <div style="font-size:12px;color:var(--texto-suave);line-height:1.5" id="lt-prog-txt"></div>
+          <div style="font-size:12px;color:var(--texto-suave);line-height:1.5;margin-top:6px">Pode deixar esta
+            janela aberta e usar outra aba. Se fechar ou a internet cair, volte em "Subir em lote" com a mesma
+            pasta: o CRM reconhece o que já está no calendário e cria só o que falta.</div>
+          <div id="lt-erros"></div>
+          <div class="lt-pronto" id="lt-pronto" style="display:none">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+            <div id="lt-pronto-txt"></div>
+          </div>
+        </div>
+        <div class="pg-rodape-form" id="lt-rodape-3" style="display:none">
+          <button class="btn btn-claro" id="lt-b-parar" onclick="ltPararAgora()">Parar aqui</button>
+          <span class="fim"></span>
+          <button class="btn btn-claro" onclick="ltFechar()">Fechar</button>
+          <button class="btn" onclick="ltIrParaFila()">Ir para a fila</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v1.405 — O VISOR DA LÂMINA.
+       Fica FORA do `.modal-fundo` de propósito: o base.js trata clique
+       no fundo e Escape olhando para essa classe, e o visor precisa
+       fechar sozinho sem encostar no compositor que está por baixo. -->
+  <div class="pg-visor" id="pg-visor" onclick="if(event.target===this)pgVisorFechar()">
+    <div class="pg-visor-conta" id="pg-visor-conta"></div>
+    <button class="pg-visor-fechar" onclick="pgVisorFechar()" title="fechar (Esc)"
+      aria-label="Fechar">&times;</button>
+    <button class="pg-visor-seta esq" onclick="pgVisorAndar(-1)"
+      aria-label="Lâmina anterior">&lsaquo;</button>
+    <img id="pg-visor-img" alt="Lâmina da postagem, ampliada para leitura">
+    <button class="pg-visor-seta dir" onclick="pgVisorAndar(1)"
+      aria-label="Próxima lâmina">&rsaquo;</button>
+    <div class="pg-visor-dica" id="pg-visor-dica">← → para andar · Esc para fechar</div>
+  </div>
+
+  <!-- a janela do compromisso da régua -->
+  <div class="modal-fundo" id="pg-modal-regua">
+    <div class="modal" style="max-width:440px">
+      <h2>Compromisso da régua</h2>
+      <div class="grade">
+        <div class="campo"><label>Dia da semana</label>
+          <select id="pg-g-dia"></select></div>
+        <div class="campo"><label>Hora</label><input type="time" id="pg-g-hora" value="18:30"></div>
+        <div class="campo"><label>Tipo</label>
+          <select id="pg-g-tipo"><option value="feed">Feed</option>
+            <option value="story">Story</option><option value="carrossel">Carrossel</option></select></div>
+        <div class="campo"><label>Tema</label>
+          <select id="pg-g-tema"><option value="imovel">Imóvel da carteira</option>
+            <option value="dica">Dica ou informação útil</option>
+            <option value="institucional">Institucional</option></select></div>
+      </div>
+      <div class="pg-rodape-form" style="border-top:0;padding:12px 0 0">
+        <button class="btn btn-claro" onclick="pgReguaFechar()">Cancelar</button>
+        <span class="fim"></span>
+        <button class="btn" onclick="pgReguaSalvar()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/vendor/supabase-js-2.112.3.umd.js?v=4aa8c171"></script>
+  <script src="js/config.js?v=4aa8c171"></script>
+  <script src="js/base.js?v=4aa8c171"></script>
+  <script src="js/avatar.js?v=4aa8c171"></script>
+  <script src="js/imagem.js?v=4aa8c171"></script>
+  <script src="js/cabecalho.js?v=4aa8c171"></script>
+  <script src="js/busca-global.js?v=4aa8c171"></script>
+  <script src="js/permissoes.js?v=4aa8c171"></script>
+  <script src="js/formatos.js?v=4aa8c171"></script>
+  <!-- v1.594 — as funções puras do comentário (autor, "há 2 horas",
+       iniciais) moram no postagem.js e são usadas pelas DUAS telas.
+       Ele traz a guarda do #pf-conteudo: aqui não desenha ficha. -->
+  <script src="js/postagem.js?v=4aa8c171"></script>
+  <script src="js/postagens.js?v=4aa8c171"></script>
+</body>
+</html>
